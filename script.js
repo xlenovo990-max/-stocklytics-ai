@@ -1,37 +1,41 @@
 // ==========================================
-// 1. 全局變數與多國語言設定 (i18n)
+// 1. Global Variables & Localization (i18n)
 // ==========================================
-let currentLang = 'zh'; // 預設為中文
-let rawAiText = "";     // 用來儲存 AI 回傳的原始文字，供一鍵複製功能使用
+let currentLang = 'en'; // Default to English for the global market
+let rawAiText = "";     // Stores the original AI response for the one-click copy feature
 
 const i18n = {
     zh: {
         copied: "已複製！",
         loading: "AI 智囊團正在精算中...",
-        error: "解碼回應失敗。"
+        error: "解碼回應失敗。",
+        promptIntro: "你是一位專業的電商財務長 (CFO)。請幫我評估以下商品的庫存與利潤，並給予補貨與營運建議：",
+        promptOutro: "請用繁體中文回答，簡短有力，語氣要專業且對店主有實質幫助。"
     },
     en: {
         copied: "Copied!",
-        loading: "AI is calculating...",
-        error: "Error decoding response."
+        loading: "AI CFO is analyzing...",
+        error: "Error decoding response.",
+        promptIntro: "You are a professional E-commerce Chief Financial Officer (CFO). Please evaluate the inventory and profit for the following product, and provide strategic restocking and operational advice:",
+        promptOutro: "Please reply in English. Keep it concise, professional, and highly actionable for the e-commerce store owner."
     }
 };
 
 // ==========================================
-// 2. 頁面載入時：自動從瀏覽器拿取並記住 API Key
+// 2. On Page Load: Handle API Key with LocalStorage
 // ==========================================
 document.addEventListener("DOMContentLoaded", () => {
-    // 🔍 自動抓取你畫面上第一個密碼輸入框（API Key 欄位）
+    // Automatically detect the password input field for the API Key
     const apiKeyInput = document.querySelector("input[type='password']") || document.getElementById("apiKey");
     
     if (apiKeyInput) {
-        // 從瀏覽器的 localStorage 保險箱拿取之前存過的 Key
+        // Retrieve the saved key from the browser's secure local storage
         const savedKey = localStorage.getItem("openrouter_api_key");
         if (savedKey) {
             apiKeyInput.value = savedKey;
         }
 
-        // 監聽輸入：只要老闆一打字或貼上 Key，立刻悄悄幫他存進瀏覽器
+        // Listen for input changes and securely save the key locally
         apiKeyInput.addEventListener("input", (e) => {
             localStorage.setItem("openrouter_api_key", e.target.value.trim());
         });
@@ -39,46 +43,47 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // ==========================================
-// 3. 核心功能：呼叫 OpenRouter AI API
+// 3. Core Logic: Call OpenRouter AI API
 // ==========================================
 async function analyzeInventory() {
-    const resultDiv = document.getElementById("result"); // 假設你顯示 AI 結果的容器 ID 是 result
+    const resultDiv = document.getElementById("result"); 
     
-    // 取得當前的 API Key
+    // Get the current saved API Key
     const savedKey = localStorage.getItem("openrouter_api_key");
     if (!savedKey) {
         alert(currentLang === 'zh' ? "請先在頂部填入您的 OpenRouter API Key 喔！" : "Please enter your OpenRouter API Key first!");
         return;
     }
 
-    // ─── 這裡抓取你網頁表單上的所有欄位數值 ───
-    // (請確保你 index.html 裡的 input ID 與下面對得口)
-    const productName = document.getElementById("productName")?.value || "未命名商品";
-    const currency = document.getElementById("currency")?.value || "HKD";
+    // Fetch values from the HTML input fields
+    const productName = document.getElementById("productName")?.value || "Unnamed Product";
+    const currency = document.getElementById("currency")?.value || "USD";
     const currentStock = document.getElementById("currentStock")?.value || 0;
     const alertThreshold = document.getElementById("alertThreshold")?.value || 5;
     const cost = document.getElementById("cost")?.value || 0;
     const price = document.getElementById("price")?.value || 0;
 
-    // 建立發送給 AI 的指令 (Prompt)
-    const promptText = `你是一位專業的電商財務長 (CFO)。請幫我評估以下商品的庫存與利潤，並給予補貨與營運建議：
-    - 商品名稱: ${productName}
-    - 貨幣單位: ${currency}
-    - 目前庫存量: ${currentStock} (警戒值: ${alertThreshold})
-    - 單件商品成本: ${cost}
-    - 單件預計售價: ${price}
+    // Dynamically build the prompt based on the selected language
+    const intro = i18n[currentLang].promptIntro;
+    const outro = i18n[currentLang].promptOutro;
     
-    請用繁體中文回答，簡短有力，語氣要專業且對店主有實質幫助。`;
+    const promptText = `${intro}
+    - Product Name: ${productName}
+    - Currency: ${currency}
+    - Current Stock Level: ${currentStock} (Alert Threshold: ${alertThreshold})
+    - Cost per Item: ${cost}
+    - Expected Retail Price: ${price}
+    
+    ${outro}`;
 
     if (resultDiv) resultDiv.innerText = i18n[currentLang].loading;
 
     try {
-        // 🚀 發送安全的非同步請求
+        // Send secure asynchronous request to OpenRouter
         const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
             method: "POST",
             headers: {
-                // 🔐 關鍵安全修正：動態帶入剛剛讀取到的 Key，絕不外洩
-                "Authorization": "Bearer " + savedKey, 
+                "Authorization": "Bearer " + savedKey, // Secure BYOK injection
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
@@ -108,7 +113,7 @@ async function analyzeInventory() {
 }
 
 // ==========================================
-// 4. 📋 一鍵複製功能 (完整保留你的排版邏輯)
+// 4. Clipboard Feature: One-Click Copy
 // ==========================================
 function copyReport() {
     if (!rawAiText) return;
@@ -124,6 +129,6 @@ function copyReport() {
             }, 2000);
         }
     }).catch(err => {
-        console.error("複製失敗:", err);
+        console.error("Clipboard copy failed:", err);
     });
-}
+                    }

@@ -1,368 +1,321 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 庫存與利潤預警小助手</title>
+    <title>AI 庫存利潤智慧管家 v3.5 PRO</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-            padding: 30px 20px; 
-            max-width: 440px; 
-            margin: auto; 
-            background-color: #f4f7f6; 
-            color: #2c3e50; 
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
         }
-
         .container {
-            background-color: #ffffff;
-            padding: 28px 24px;
-            border-radius: 16px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
-            position: relative;
+            max-width: 600px;
+            margin-top: 30px;
+            margin-bottom: 50px;
         }
-
-        /* 🌐 頂部控制列 */
-        .top-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
+        .card {
+            border: none;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            padding: 30px;
+            background: #fff;
+        }
+        .form-label {
+            font-weight: 500;
+            color: #495057;
+            margin-top: 15px;
+        }
+        .form-control, .form-select {
+            border-radius: 10px;
+            padding: 12px;
+            border: 1px solid #ced4da;
+            background-color: #f8f9fa;
+        }
+        .form-control:focus, .form-select:focus {
+            background-color: #fff;
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 0.25rem rgba(13,110,253,.15);
+        }
+        .btn-primary {
+            border-radius: 10px;
+            padding: 14px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #0d6efd, #0a58ca);
+            border: none;
+            margin-top: 25px;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(13,110,253,0.3);
+        }
+        .api-box {
+            background-color: #fff8ee;
+            border: 1px dashed #ffc107;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 25px;
+        }
+        #resultBox {
+            display: none;
+            margin-top: 25px;
+            border-left: 5px solid #0d6efd;
+            border-radius: 4px 12px 12px 4px;
+            background-color: #f0f7ff;
+            padding: 20px;
+        }
+        .lang-switch {
+            text-align: right;
+            margin-bottom: 15px;
         }
         .lang-btn {
-            background: #e2e8f0;
-            color: #4a5568;
+            background: #e9ecef;
             border: none;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
+            padding: 5px 15px;
+            border-radius: 15px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #495057;
             cursor: pointer;
-            transition: all 0.2s;
         }
-        .lang-btn:hover { background: #cbd5e1; }
-
-        /* 🔒 API Key 安全輸入區 (無痕防毒版) */
-        .api-box {
-            background-color: #f8fafc;
-            border: 1px dashed #cbd5e1;
-            padding: 10px;
-            border-radius: 8px;
-            margin-bottom: 20px;
+        .lang-btn:hover {
+            background: #dee2e6;
         }
-        .api-box label { display: block; font-size: 11px; color: #64748b; margin-bottom: 4px; font-weight: 600; }
-        .api-box input { padding: 6px 10px; font-size: 12px; background-color: #ffffff; width: 100%; box-sizing: border-box; border: 1px solid #e2e8f0; border-radius: 6px; }
-
-        h2 { 
-            margin-top: 0;
-            margin-bottom: 24px;
-            font-size: 21px;
-            color: #1a2a3a;
-            text-align: center;
+        .report-text {
+            white-space: pre-wrap;
+            line-height: 1.8;
+        }
+        .report-text h1, .report-text h2, .report-text h3 {
+            font-size: 1.2rem;
             font-weight: 700;
+            color: #0a58ca;
+            margin-top: 20px;
+            margin-bottom: 10px;
         }
-        
-        .form-group { margin-bottom: 18px; }
-        
-        label { 
-            display: block; 
-            margin-bottom: 8px; 
-            font-weight: 600; 
-            font-size: 14px;
-            color: #4a5568;
-        }
-        
-        input, select { 
-            width: 100%; 
-            padding: 12px 14px; 
-            box-sizing: border-box; 
-            border: 1px solid #e2e8f0; 
-            border-radius: 8px; 
-            font-size: 15px;
-            background-color: #f8fafc;
-            transition: all 0.2s ease;
-        }
-        
-        input:focus, select:focus {
-            outline: none;
-            border-color: #3b82f6;
-            background-color: #ffffff;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
-        }
-        
-        button.submit-btn { 
-            width: 100%; 
-            padding: 14px; 
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-            color: white; 
-            border: none; 
-            border-radius: 8px; 
-            cursor: pointer; 
-            font-size: 16px; 
-            font-weight: 600;
-            margin-top: 12px; 
-            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
-            transition: all 0.2s ease;
-        }
-        button.submit-btn:active { transform: scale(0.98); }
-        
-        /* 📈 結果儀表板與複製按鈕 */
-        .result-container {
-            position: relative;
-            margin-top: 24px;
-            display: none;
-        }
-        #result { 
-            padding: 18px; 
-            border-radius: 10px; 
-            background-color: #f0f7ff; 
-            border-left: 5px solid #3b82f6;
-            line-height: 1.7; 
-            white-space: pre-wrap; 
-            font-size: 15px;
-            color: #1e293b;
-        }
-        .copy-btn {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background-color: #ffffff;
-            color: #3b82f6;
-            border: 1px solid #bfdbfe;
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        }
-        .copy-btn:hover { background-color: #eff6ff; }
-
-        code {
-            background-color: #e2e8f0;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-family: monospace;
-            font-size: 14px;
-            color: #0f172a;
+        .report-text strong {
+            color: #111;
         }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <div class="top-bar">
-            <span style="font-size: 12px; color: #94a3b8; font-weight: 600;">v3.5 PRO</span>
-            <button class="lang-btn" onclick="toggleLanguage()" id="langBtn">English</button>
+<div class="container">
+    <div class="card">
+        <!-- 頂部版本與語言切換 -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <span class="text-muted small fw-bold" id="versionText">v3.5 PRO</span>
+            <button class="lang-btn" id="langBtn" onclick="toggleLanguage()">English</button>
         </div>
 
+        <!-- API 金鑰輸入框（無痕無記憶體、全英文高安全感提示字） -->
         <div class="api-box">
-            <label id="lblApiKey">🔑 OpenRouter API Key (基於隱私安全，關閉網頁即自動銷毀，不留痕跡)</label>
-            <input type="password" id="apiKeyField" placeholder="sk-or-v1-......">
+            <label class="form-label mt-0 fw-bold" id="apiKeyLabel">🔑 OpenRouter API Key <span class="text-muted small fw-normal">(基於隱私安全，關閉網頁即自動銷毀，不留痕跡)</span></label>
+            <input type="password" id="apiKey" class="form-control" placeholder="Please paste your OpenRouter API Key here (Will NOT be saved on any server)">
         </div>
 
-        <h2 id="uiTitle">📊 AI 庫存利潤智慧管家</h2>
+        <h2 class="text-center mb-4 fw-bold" id="mainTitle">📊 AI 庫存利潤智慧管家</h2>
 
-        <div class="form-group">
-            <label id="lblProdName">商品名稱</label>
-            <input type="text" id="productName" placeholder="例如：手作水晶手鍊">
-        </div>
+        <!-- 表單資料 -->
+        <label class="form-label" id="labelProdName">商品名稱</label>
+        <input type="text" id="prodName" class="form-control" placeholder="例如：手作水晶手鍊">
 
-        <div class="form-group">
-            <label id="lblCurrency">使用的貨幣單位</label>
-            <select id="currencySelect">
-                <option value="HKD">HKD ($)</option>
-                <option value="USD">USD ($)</option>
-                <option value="TWD">TWD (NT$)</option>
-                <option value="EUR">EUR (€)</option>
-                <option value="RMB">RMB (¥)</option>
-            </select>
-        </div>
-        
-        <div class="form-group">
-            <label id="lblStock">目前庫存量</label>
-            <input type="text" inputmode="numeric" pattern="[0-9]*" id="currentStock" placeholder="0">
-        </div>
-        
-        <div class="form-group">
-            <label id="lblThreshold">警戒值（低於此數提醒）</label>
-            <input type="text" inputmode="numeric" pattern="[0-9]*" id="threshold" placeholder="5">
-        </div>
+        <label class="form-label" id="labelCurrency">使用的貨幣單位</label>
+        <select id="currency" class="form-select">
+            <option value="HKD">HKD ($)</option>
+            <option value="USD">USD ($)</option>
+            <option value="EUR">EUR (€)</option>
+            <option value="TWD">TWD ($)</option>
+            <option value="JPY">JPY (¥)</option>
+        </select>
 
-        <div class="form-group">
-            <label id="lblCost">單件商品成本</label>
-            <input type="text" inputmode="numeric" pattern="[0-9]*" id="productCost" placeholder="0">
-        </div>
+        <label class="form-label" id="labelStock">目前庫存量</label>
+        <input type="number" id="stock" class="form-control" value="0">
 
-        <div class="form-group">
-            <label id="lblPrice">單件預計售價</label>
-            <input type="text" inputmode="numeric" pattern="[0-9]*" id="productPrice" placeholder="0">
-        </div>
-        
-        <button class="submit-btn" onclick="analyzeStock()" id="btnSubmit">開始 AI 營運與利潤精算</button>
+        <label class="form-label" id="labelAlert">警戒值（低於此數提醒）</label>
+        <input type="number" id="alertThreshold" class="form-control" value="5">
 
-        <div class="result-container" id="resultContainer">
-            <button class="copy-btn" onclick="copyReport()" id="btnCopy">📋 複製報告</button>
-            <div id="result"></div>
+        <label class="form-label" id="labelCost">單件商品成本</label>
+        <input type="number" id="cost" class="form-control" value="0">
+
+        <label class="form-label" id="labelPrice">單件預計售價</label>
+        <input type="number" id="price" class="form-control" value="0">
+
+        <!-- 觸發按鈕 -->
+        <button class="btn btn-primary w-100" id="submitBtn" onclick="runAnalysis()">開始 AI 營運與利潤精算</button>
+
+        <!-- 結果顯示區域 -->
+        <div id="resultBox">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h5 class="fw-bold text-primary m-0" id="reportTitle">📋 AI CFO 營運報告</h5>
+                <button class="btn btn-sm btn-outline-secondary" id="copyBtn" onclick="copyReport()">📋 Copy Report</button>
+            </div>
+            <div id="reportContent" class="report-text"></div>
         </div>
     </div>
+</div>
 
-    <script>
-        let currentLang = 'zh'; 
-        let rawAiText = ""; // 用於儲存未過濾的純文字方便用戶複製
+<!-- JavaScript 邏輯 -->
+<script>
+    let currentLang = 'zh';
 
-        const i18n = {
-            zh: {
-                title: "📊 AI 庫存利潤智慧管家",
-                apiKey: "🔑 OpenRouter API Key (基於隱私安全，關閉網頁即自動銷毀，不留痕跡)",
-                prodName: "商品名稱",
-                prodPlaceholder: "例如：手作水晶手鍊",
-                currency: "使用的貨幣單位",
-                stock: "目前庫存量",
-                threshold: "警戒值（低於此數提醒）",
-                cost: "單件商品成本",
-                price: "單件預計售價",
-                submit: "開始 AI 營運與利潤精算",
-                loading: "🔄 AI 財務專家正在計算最佳資金產出率...",
-                alert: "請完整輸入所有資料喔！",
-                alertKey: "請先填入您的 OpenRouter API Key 喔！",
-                btn: "English",
-                copy: "📋 複製報告",
-                copied: "✅ 已複製到剪貼簿！"
-            },
-            en: {
-                title: "📊 AI Inventory & Profit Manager",
-                apiKey: "🔑 OpenRouter API Key (Zero-trace local privacy. Auto-destroys on close)",
-                prodName: "Product Name",
-                prodPlaceholder: "e.g., Handmade Crystal Bracelet",
-                currency: "Currency Unit",
-                stock: "Current Stock Level",
-                threshold: "Alert Threshold (Remind when below)",
-                cost: "Cost per Unit",
-                price: "Expected Retail Price",
-                submit: "Run AI Financial Analysis",
-                loading: "🔄 AI Financial Expert is calculating capital efficiency...",
-                alert: "Please fill in all the fields!",
-                alertKey: "Please enter your OpenRouter API Key first!",
-                btn: "繁體中文",
-                copy: "📋 Copy Report",
-                copied: "✅ Copied to clipboard!"
-            }
-        };
+    const i18n = {
+        zh: {
+            langBtn: "English",
+            apiKeyLabel: "🔑 OpenRouter API Key <span class='text-muted small fw-normal'>(基於隱私安全，關閉網頁即自動銷毀，不留痕跡)</span>",
+            mainTitle: "📊 AI 庫存利潤智慧管家",
+            labelProdName: "商品名稱",
+            placeholderProdName: "例如：手作水晶手鍊",
+            labelCurrency: "使用的貨幣單位",
+            labelStock: "目前庫存量",
+            labelAlert: "警戒值（低於此數提醒）",
+            labelCost: "單件商品成本",
+            labelPrice: "單件預計售價",
+            submitBtn: "開始 AI 營運與利潤精算",
+            loadingText: "🔄 AI 財務專家正在計算中，請稍候...",
+            reportTitle: "📋 AI CFO 營運報告",
+            copyBtn: "📋 複製報告",
+            alertNoKey: "請先輸入您的 OpenRouter API Key！",
+            alertNoName: "請輸入商品名稱！",
+            promptSystem: "你是一位精通跨境電商、零售與供應鏈管理的資深 AI 財務長（CFO）。請針對使用者輸入的商品數據，進行精準的庫存水位評估、補貨成本計算、潛在利潤分析，並給出2條具體的店鋪營運與行銷優化策略。請務必使用『繁體中文』回答。格式請多利用條列式與粗體字，讓排版清晰易讀。"
+        },
+        en: {
+            langBtn: "繁體中文",
+            apiKeyLabel: "🔑 OpenRouter API Key <span class='text-muted small fw-normal'>(Privacy Safe: Destroyed upon closing browser)</span>",
+            mainTitle: "📊 AI Stock & Profit Manager",
+            labelProdName: "Product Name",
+            placeholderProdName: "e.g., Handmade Crystal Bracelet",
+            labelCurrency: "Currency Unit",
+            labelStock: "Current Stock",
+            labelAlert: "Alert Threshold (Restock Warning)",
+            labelCost: "Cost per Unit",
+            labelPrice: "Expected Retail Price",
+            submitBtn: "Run AI Financial Analysis",
+            loadingText: "🔄 AI Financial Expert is calculating, please wait...",
+            reportTitle: "📋 AI CFO Operations Report",
+            copyBtn: "📋 Copy Report",
+            alertNoKey: "Please enter your OpenRouter API Key first!",
+            alertNoName: "Please enter the product name!",
+            promptSystem: "You are an expert AI Chief Financial Officer (CFO) specializing in cross-border e-commerce and retail supply chain management. Analyze the product data provided and output a comprehensive financial report detailing: 1. Stock level evaluation, 2. Restock cost calculation, 3. Profit margin analysis, and 4. Two actionable store operations/marketing optimization strategies. You MUST reply in English. Use clean bullet points and bold text for layout."
+        }
+    };
 
-        // 🔥 關鍵安全升級：徹底移除 localStorage 讀取，不留物理物理痕跡
+    function toggleLanguage() {
+        currentLang = currentLang === 'zh' ? 'en' : 'zh';
+        const t = i18n[currentLang];
+        
+        document.getElementById('langBtn').innerText = t.langBtn;
+        document.getElementById('apiKeyLabel').innerHTML = t.apiKeyLabel;
+        document.getElementById('mainTitle').innerText = t.mainTitle;
+        document.getElementById('labelProdName').innerText = t.labelProdName;
+        document.getElementById('prodName').placeholder = t.placeholderProdName;
+        document.getElementById('labelCurrency').innerText = t.labelCurrency;
+        document.getElementById('labelStock').innerText = t.labelStock;
+        document.getElementById('labelAlert').innerText = t.labelAlert;
+        document.getElementById('labelCost').innerText = t.labelCost;
+        document.getElementById('labelPrice').innerText = t.labelPrice;
+        document.getElementById('submitBtn').innerText = t.submitBtn;
+        document.getElementById('reportTitle').innerText = t.reportTitle;
+        document.getElementById('copyBtn').innerText = t.copyBtn;
+    }
 
-        function toggleLanguage() {
-            currentLang = (currentLang === 'zh') ? 'en' : 'zh';
-            const langData = i18n[currentLang];
-            
-            document.getElementById('uiTitle').innerText = langData.title;
-            document.getElementById('lblApiKey').innerText = langData.apiKey;
-            document.getElementById('lblProdName').innerText = langData.prodName;
-            document.getElementById('productName').placeholder = langData.prodPlaceholder;
-            document.getElementById('lblCurrency').innerText = langData.currency;
-            document.getElementById('lblStock').innerText = langData.stock;
-            document.getElementById('lblThreshold').innerText = langData.threshold;
-            document.getElementById('lblCost').innerText = langData.cost;
-            document.getElementById('lblPrice').innerText = langData.price;
-            document.getElementById('btnSubmit').innerText = langData.submit;
-            document.getElementById('langBtn').innerText = langData.btn;
-            document.getElementById('btnCopy').innerText = langData.copy;
-            
-            document.getElementById('resultContainer').style.display = 'none';
+    // 將 Markdown 的標題和粗體轉換成精美網頁 HTML 的簡單過濾器
+    function formatMarkdown(text) {
+        let html = text;
+        // 替換 ### 標題、## 標題、# 標題
+        html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+        html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
+        html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
+        // 替換粗體 **text**
+        html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        return html;
+    }
+
+    async function runAnalysis() {
+        const apiKey = document.getElementById('apiKey').value.trim();
+        const prodName = document.getElementById('prodName').value.trim();
+        const currency = document.getElementById('currency').value;
+        const stock = parseInt(document.getElementById('stock').value) || 0;
+        const alertThreshold = parseInt(document.getElementById('alertThreshold').value) || 0;
+        const cost = parseFloat(document.getElementById('cost').value) || 0;
+        const price = parseFloat(document.getElementById('price').value) || 0;
+
+        const t = i18n[currentLang];
+
+        if (!apiKey) {
+            alert(t.alertNoKey);
+            return;
+        }
+        if (!prodName) {
+            alert(t.alertNoName);
+            return;
         }
 
-        async function analyzeStock() {
-            // 精準抓取你網頁中定義的各個欄位 ID
-            const apiKey = document.getElementById('apiKeyField').value.trim();
-            const name = document.getElementById('productName').value.trim();
-            const currency = document.getElementById('currencySelect').value;
-            const current = parseInt(document.getElementById('currentStock').value);
-            const threshold = parseInt(document.getElementById('threshold').value);
-            const cost = parseInt(document.getElementById('productCost').value);
-            const price = parseInt(document.getElementById('productPrice').value);
-            const container = document.getElementById('resultContainer');
-            const resultDiv = document.getElementById('result');
+        const submitBtn = document.getElementById('submitBtn');
+        const resultBox = document.getElementById('resultBox');
+        const reportContent = document.getElementById('reportContent');
 
-            if (!apiKey) {
-                alert(i18n[currentLang].alertKey);
-                return;
-            }
+        submitBtn.disabled = true;
+        submitBtn.innerText = t.loadingText;
+        resultBox.style.display = "block";
+        reportContent.innerText = t.loadingText;
 
-            // 🔥 關鍵安全升級：徹底移除了 localStorage.setItem。每次用完即走，安全拉滿！
+        // 構造發送給 DeepSeek 的數據 Prompt
+        const userPrompt = `
+以下是商品的當前數據，請為我生成財務分析報告：
+- 商品名稱：${prodName}
+- 貨幣單位：${currency}
+- 目前庫存量：${stock} 件
+- 庫存警戒值：${alertThreshold} 件
+- 單件商品成本：${cost} ${currency}
+- 單件預計售價：${price} ${currency}
+        `;
 
-            if (name === "" || isNaN(current) || isNaN(threshold) || isNaN(cost) || isNaN(price)) {
-                alert(i18n[currentLang].alert);
-                return;
-            }
-
-            container.style.display = 'block';
-            resultDiv.innerHTML = `<span style='color: #64748b;'>${i18n[currentLang].loading}</span>`;
-
-            let promptText = `You are a professional e-commerce financial management expert. 
-Product: ${name}
-Current Stock: ${current} units
-Alert Threshold: ${threshold} units
-Cost per Unit: ${cost} ${currency}
-Selling Price per Unit: ${price} ${currency}
-Currency to use in all calculations: ${currency}
-
-Please evaluate stock level and calculate total restock cost, net profit, and profit margin if restocking is needed. 
-Reply strictly in ${currentLang === 'zh' ? 'Traditional Chinese (Hong Kong)' : 'English'}. Keep the tone professional, business-focused, and highly actionable with clear bullet points.`;
-
-            try {
-                const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-                    method: "POST",
-                    headers: {
-                        "Authorization": `Bearer ${apiKey}`, 
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        "model": "deepseek/deepseek-chat", 
-                        "messages": [{"role": "user", "content": promptText}]
-                    })
-                });
-
-                const data = await response.json();
-                
-                if (!response.ok || data.error) {
-                    const errorMsg = data.error?.message || "Authentication Failed or Rate Limited";
-                    resultDiv.innerText = `Error: ${errorMsg}`;
-                    return;
-                }
-
-                if (data.choices && data.choices[0]) {
-                    rawAiText = data.choices[0].message.content;
-                    let aiMessage = rawAiText;
-                    
-                    // 商品級美化解析過濾器
-                    aiMessage = aiMessage.replace(/###\s*(.*?)(?=\n|$)/g, '<strong style="display:block; font-size:16px; color:#1a2a3a; margin-top:16px; margin-bottom:6px;">$1</strong>');
-                    aiMessage = aiMessage.replace(/---/g, '<hr style="border:0; border-top:1px dashed #cbd5e1; margin:15px 0;">');
-                    aiMessage = aiMessage.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-                    aiMessage = aiMessage.replace(/`(.*?)`/g, '<code>$1</code>');
-                    
-                    resultDiv.innerHTML = aiMessage;
-                } else {
-                    resultDiv.innerText = "Error decoding response.";
-                }
-
-            } catch (error) {
-                resultDiv.innerText = `Network/System Error: ${error.message}`;
-            }
-        }
-
-        // 📋 一鍵複製功能
-        function copyReport() {
-            if (!rawAiText) return;
-            navigator.clipboard.writeText(rawAiText).then(() => {
-                const copyBtn = document.getElementById('btnCopy');
-                const originalText = copyBtn.innerText;
-                copyBtn.innerText = i18n[currentLang].copied;
-                setTimeout(() => { copyBtn.innerText = originalText; }, 2000);
-            }).catch(err => {
-                console.error("Clipboard blocked: ", err);
+        try {
+            const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${apiKey}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    "model": "deepseek/deepseek-chat", 
+                    "messages": [
+                        {"role": "system", "content": t.promptSystem},
+                        {"role": "user", "content": userPrompt}
+                    ]
+                })
             });
+
+            const data = await response.json();
+            
+            if (data.choices && data.choices[0]) {
+                const rawReport = data.choices[0].message.content;
+                // 經過 formatMarkdown 過濾器美化後再渲染
+                reportContent.innerHTML = formatMarkdown(rawReport);
+            } else {
+                reportContent.innerText = "Error: 無法取得 AI 回應，請檢查 API Key 是否正確或額度是否充足。";
+            }
+
+        } catch (error) {
+            reportContent.innerText = "連線失敗: " + error.message;
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerText = t.submitBtn;
         }
-    </script>
+    }
+
+    function copyReport() {
+        const reportContent = document.getElementById('reportContent');
+        navigator.clipboard.writeText(reportContent.innerText);
+        alert(currentLang === 'zh' ? "報告已成功複製到剪貼簿！" : "Report copied to clipboard!");
+    }
+</script>
+
 </body>
     </html>
